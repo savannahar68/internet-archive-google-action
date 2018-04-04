@@ -3,23 +3,32 @@ const rewire = require('rewire');
 const sinon = require('sinon');
 
 const {buildIntentRequest, MockResponse} = require('./_utils/mocking');
-const index = rewire('..');
-
 const {wait} = require('./_utils/wait');
 
-describe('playMedia', () => {
+let index, configStub, adminInitStub, functions, admin;
+
+describe('assistant', () => {
   let res;
+
+  before(function () {
+    this.timeout(3000);
+    admin = require('firebase-admin');
+    adminInitStub = sinon.stub(admin, 'initializeApp');
+    functions = require('firebase-functions');
+    configStub = sinon.stub(functions, 'config').returns(require(`./.runtimeconfig.json`));
+    index = rewire('..');
+  });
 
   beforeEach(() => {
     res = new MockResponse();
   });
 
   it('should be defined', () => {
-    expect(index.playMedia).to.be.ok;
+    expect(index.assistant).to.be.ok;
   });
 
   it('should store last used action', () => {
-    index.playMedia(buildIntentRequest({
+    index.assistant(buildIntentRequest({
       action: 'welcome',
       lastSeen: null,
     }), res);
@@ -30,7 +39,7 @@ describe('playMedia', () => {
     const action = 'on-definitely-uncovered-action';
     let warning = sinon.spy();
     index.__set__('warning', warning);
-    index.playMedia(buildIntentRequest({
+    index.assistant(buildIntentRequest({
       action,
       lastSeen: null,
     }), res);
@@ -40,5 +49,11 @@ describe('playMedia', () => {
         expect(warning.getCall(0).args[0]).to.includes(action);
         expect(warning).to.be.calledOnce;
       });
+  });
+
+  after(() => {
+    // Restoring our stubs to the original methods.
+    configStub.restore();
+    adminInitStub.restore();
   });
 });

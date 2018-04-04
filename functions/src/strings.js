@@ -22,11 +22,50 @@ module.exports = {
   },
 
   dialog: {
-    playSong: {
-      description: 'Playing track - {{title}}{{#coverage}}, {{coverage}}{{/coverage}}{{#year}}, {{year}}{{/year}}',
-      title: 'Playing track{{#track}} number - {{track}}{{/track}}{{^track}}{{title}}{{/track}}',
+    playSong: [{
+      /**
+       * choose this one if song is from collection 'etree'
+       */
+      condition: 'includes(collections, "etree")',
+
+      description: 'Track - {{title}} of {{creator}}{{#coverage}} in {{coverage}}{{/coverage}}{{#year}}, {{year}}{{/year}}',
+      // We should "say" something or play a sound between songs
+      // official response:
+      // https://github.com/actions-on-google/actions-on-google-nodejs/issues/103#issuecomment-373231791
+      //
+      // we can choose any sound from here
+      // https://developers.google.com/actions/tools/sound-library/
+      // [!] but we should use it for Google actions only
+      speech: `
+        <audio src="https://actions.google.com/sounds/v1/foley/cassette_tape_button.ogg"
+               clipBegin="4.5s"
+               clipEnd="5.5s"
+               soundLevel="10db">
+          <desc>Track - Breezin&amp;#39;, Northampton, MA, 2010</desc>
+        </audio>
+      `,
+      title: '{{title}} by {{creator}}{{#year}}, {{year}}{{/year}}',
       suggestionLink: 'on Archive.org',
-    }
+    }, {
+      description: 'Track - {{title}} of {{creator}}{{#year}} {{year}}{{/year}}',
+      // We should "say" something or play a sound between songs
+      // official response:
+      // https://github.com/actions-on-google/actions-on-google-nodejs/issues/103#issuecomment-373231791
+      //
+      // we can choose any sound from here
+      // https://developers.google.com/actions/tools/sound-library/
+      // [!] but we should use it for Google actions only
+      speech: `
+        <audio src="https://actions.google.com/sounds/v1/foley/cassette_tape_button.ogg"
+               clipBegin="4.5s"
+               clipEnd="5.5s"
+               soundLevel="10db">
+          <desc>Track - Breezin&amp;#39;, Northampton, MA, 2010</desc>
+        </audio>
+      `,
+      title: '{{title}} by {{creator}} {{year}}',
+      suggestionLink: 'on Archive.org',
+    }],
   },
 
   /**
@@ -45,7 +84,7 @@ module.exports = {
       slots: [
         'collectionId',
         'coverage',
-        'creatorId',
+        'creator',
         'order',
         'subject',
         'year',
@@ -66,7 +105,32 @@ module.exports = {
       /**
        * and ask fulfillment for a feeder
        */
-      fulfillment: 'albums-async',
+      fulfillment: {
+        feeder: 'albums-async',
+        speech: [
+          `I've got {{total}} {{subject}} albums. Let's listen them.`,
+          `I've got {{total}} albums from {{creator}} here. Let's start listening to them.`,
+          `I found {{total}} {{subject}} albums. Let's listen to them.`,
+          `Let's play {{subject}} music.`,
+          `Let's play music from {{creator}}.`,
+          `Let's play music from {{coverage}}.`,
+          `Let's dive into {{year}}.`,
+          `I have {{total}} albums from {{year}}. Let's dive into it.`,
+        ],
+      },
+
+      /**
+         * When user missed the available range
+         * we should help them to find alternative.
+         */
+      repair: {
+        speech: [
+          `I don’t have anything for {{year}}. Try {{suggestions.0}}, for example.`,
+          `I don't have {{creator}} albums for {{year}}. Try {{suggestions.0}}, for example.`,
+          `I don't have any albums of {{year}}. Try {{suggestions.0}}, for example.`,
+          `I don't have that. Try {{suggestions.0}}, for example.`,
+        ],
+      },
     },
 
     /**
@@ -75,9 +139,7 @@ module.exports = {
     musicQuery: [{
       name: 'george blood collection',
 
-      conditions: [
-        'collectionId == "georgeblood"'
-      ],
+      condition: 'collectionId == "georgeblood"',
 
       slots: [
         'collectionId',
@@ -110,23 +172,23 @@ module.exports = {
        * to check our undestanding
        */
       acknowledges: [
-        'Ok! Lets go with {{__resolvers.creator.title}} performer!',
-        `You've selected {{__resolvers.alias.collectionId}} collection.`,
+        'Ok! Lets go with {{creator}} performer!',
+        `You've selected {{alias.collectionId}}.`,
       ],
 
       prompts: [{
         /**
          * prompt for single slot
          */
-        requirements: [
+        confirm: [
           'subject'
         ],
 
         /**
          * slots which we need for fulfillement
          */
-        prompts: [
-          'What genre of music would you like to listen to? Please select a topic like {{__resolvers.short-options.suggestions}}?',
+        speech: [
+          'What genre of music would you like to listen to? Please select a topic like {{short-options.suggestions}}?',
         ],
 
         /**
@@ -143,7 +205,18 @@ module.exports = {
        * feeder which we should call once we get all slots
        * (we could have a lot of songs here - because we filter by genre)
        */
-      fulfillment: 'albums-async',
+      // fulfillment: 'albums-async',
+      fulfillment: {
+        feeder: 'albums-async',
+        speech: [
+          `I've got {{total}} {{subject}} albums. Let's listen them.`,
+          `Here are some {{subject}} albums.`,
+          `Let's play some {{subject}} music.`,
+          `Let's play music from {{creator}}.`,
+          `Let's play music from {{coverage}}.`,
+          `Let's dive into {{year}}.`,
+        ],
+      },
     }, {
       name: 'DEFAULT music search query',
 
@@ -152,7 +225,7 @@ module.exports = {
        */
       slots: [
         'collectionId',
-        'creatorId',
+        'creator',
         'coverage',
         'year',
       ],
@@ -165,7 +238,7 @@ module.exports = {
         random: {
           defaults: {
             collectionId: {skip: true},
-            creatorId: {skip: true},
+            creator: {skip: true},
             coverage: {skip: true},
             year: {skip: true},
             order: 'random',
@@ -181,8 +254,8 @@ module.exports = {
         '{{coverage}} - good place!',
         '{{coverage}} {{year}} - great choice!',
         '{{year}} - it was excellent year!',
-        'Ok! Lets go with {{__resolvers.creator.title}} band!',
-        `You've selected {{__resolvers.alias.collectionId}} collection.`,
+        'Ok! Lets go with {{creator}}!',
+        `You've selected {{alias.collectionId}}.`,
       ],
 
       /**
@@ -192,12 +265,12 @@ module.exports = {
         /**
          * prompt for a single slot
          */
-        requirements: [
+        confirm: [
           'collectionId'
         ],
 
-        prompts: [
-          'Would you like to listen to music from our collections of {{__resolvers.short-options.suggestions}}?',
+        speech: [
+          'Would you like to listen to music from our collections of {{short-options.suggestions}}?',
         ],
 
         /**
@@ -211,28 +284,38 @@ module.exports = {
         /**
          * prompt for single slot
          */
-        requirements: [
-          'creatorId'
+        confirm: [
+          'creator'
         ],
 
-        prompts: [
-          'What artist would you like to listen to? For example, {{__resolvers.short-options.suggestions}}?',
+        speech: [
+          'What artist would you like to listen to? For example, {{short-options.suggestions}}?',
         ],
 
         /**
          * Template for creating suggestions
          */
         suggestionTemplate: 'the {{creator}}',
+
+        /**
+         * When user missed the available range
+         * we should help them to find alternative.
+         */
+        repair: {
+          speech: [
+            `We don't have concerts of {{creator}}. Maybe you would like to listent {{short-options.suggestions}}?`,
+          ],
+        },
       }, {
         /**
          * we can prompt to give 2 slots in the same time
          */
-        requirements: [
+        confirm: [
           'coverage',
           'year',
         ],
 
-        prompts: [
+        speech: [
           'Do you have a specific city and year in mind, like {{suggestions.0}}, or would you like me to play something randomly?',
         ],
 
@@ -240,23 +323,59 @@ module.exports = {
          * Template for creating suggestions
          */
         suggestionTemplate: '{{coverage}} {{year}}',
+
+        /**
+         * When user missed the available range
+         * we should help them to find alternative.
+         */
+        repair: {
+          speech: [
+            `I don't have {{creator}} concerts for {{year}} in {{coverage}}. What about {{suggestions.0}}?`,
+            `I don't have any concerts for {{year}} in {{coverage}}. But we do have {{suggestions.0}}.`,
+            `I don't have that concert. Maybe you would like {{suggestions.0}}?`,
+          ],
+        },
       }, {
         /**
          * prompt for single slot
          */
-        requirements: [
+        confirm: [
           'year',
         ],
 
-        prompts: [
-          'Ok, {{__resolvers.creator.title}} has played in {{coverage}} sometime {{__resolvers.years-interval.suggestions}}. Do you have a particular year in mind?',
+        speech: [
+          'Ok, {{creator}} has played in {{coverage}} sometime {{years-interval.suggestions}}. Do you have a particular year in mind?',
         ],
+
+        /**
+         * When user missed the available range
+         * we should help them to find alternative.
+         */
+        repair: {
+          speech: [
+            `I don’t have anything for {{year}}. Available years for {{coverage}} are {{years-interval.suggestions}}.`,
+            `I don't have {{creator}} concerts from {{year}}. Try {{years-interval.suggestions}}.`,
+            `I don't have any concerts for {{year}}. Try {{years-interval.suggestions}}.`,
+            `I don't have that concert. Try {{years-interval.suggestions}}.`,
+          ],
+        },
       }],
 
       /**
        * feeder which we should call once we get all slots
        */
-      fulfillment: 'albums',
+      // fulfillment: 'albums',
+      fulfillment: {
+        feeder: 'albums',
+        speech: [
+          `Let's play this concert that {{creator}} played in {{year}}, in {{coverage}}.`,
+          `Let's play {{creator}} concerts.`,
+          `Let's play concerts from {{creator}}.`,
+          `Let's play {{subject}} concerts.`,
+          `Let's play concerts from {{coverage}}.`,
+          `Let's dive into {{year}}.`,
+        ],
+      },
     }],
 
     noInput: [{
@@ -266,6 +385,15 @@ module.exports = {
     }, {
       speech: "I'm sorry I'm having trouble here. Maybe we should try this again later.",
     }],
+
+    titleOption: {
+      false: {
+        speech: `Ok, muting song titles.`,
+      },
+      true: {
+        speech: `Excellent! I'll be saying title to each song.`,
+      },
+    },
 
     unknown: [{
       speech: "I'm not sure what you said. Can you repeat that?",

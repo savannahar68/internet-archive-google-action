@@ -1,5 +1,8 @@
+const audio = require('./audio');
+
 module.exports = {
   ask: require('./ask'),
-  playSong: require('./audio').playSong,
+  playSong: audio.playSong,
+  processOptions: audio.processOptions,
   tell: require('./tell'),
 };
