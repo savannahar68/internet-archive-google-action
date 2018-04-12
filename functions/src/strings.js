@@ -41,7 +41,7 @@ module.exports = {
                clipBegin="4.5s"
                clipEnd="5.5s"
                soundLevel="10db">
-          <desc>Track - Breezin&amp;#39;, Northampton, MA, 2010</desc>
+          <desc>Track - {{title}} of {{creator}}{{#coverage}} in {{coverage}}{{/coverage}}{{#year}}, {{year}}{{/year}}</desc>
         </audio>
       `,
       title: '{{title}} by {{creator}}{{#year}}, {{year}}{{/year}}',
@@ -60,7 +60,7 @@ module.exports = {
                clipBegin="4.5s"
                clipEnd="5.5s"
                soundLevel="10db">
-          <desc>Track - Breezin&amp;#39;, Northampton, MA, 2010</desc>
+          <desc>Track - {{title}} of {{creator}}{{#year}} {{year}}{{/year}}</desc>
         </audio>
       `,
       title: '{{title}} by {{creator}} {{year}}',
@@ -108,7 +108,7 @@ module.exports = {
       fulfillment: {
         feeder: 'albums-async',
         speech: [
-          `I've got {{total}} {{subject}} albums. Let's listen them.`,
+          `I've got {{total}} {{subject}} albums. Let's listen to them.`,
           `I've got {{total}} albums from {{creator}} here. Let's start listening to them.`,
           `I found {{total}} {{subject}} albums. Let's listen to them.`,
           `Let's play {{subject}} music.`,
@@ -209,7 +209,7 @@ module.exports = {
       fulfillment: {
         feeder: 'albums-async',
         speech: [
-          `I've got {{total}} {{subject}} albums. Let's listen them.`,
+          `I've got {{total}} {{subject}} albums. Let's listen to them.`,
           `Here are some {{subject}} albums.`,
           `Let's play some {{subject}} music.`,
           `Let's play music from {{creator}}.`,
@@ -402,6 +402,10 @@ module.exports = {
     }, {
       speech: "I'm sorry I'm having trouble here. Maybe we should try this again later.",
     }],
+
+    version: {
+      speech: 'Version is {{version}}.',
+    },
 
     welcome: {
       acknowledges: [
